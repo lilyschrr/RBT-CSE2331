@@ -21,7 +21,7 @@ Consequently, searching has a worst-case time complexity of O(log n).
 Unlike Red-Black Trees, BSTs can be very skewed, where the height of the tree is equal to n. As a result, searching, inserting, and deleting in BSTs run in O(n) time in the worst-case.  
 #### AVL Trees:  
 AVL trees are strictly balanced, while Red-Black trees are not entirely height balanced. Further, AVL trees require many rotations to maintain balance, while Red-Black trees require a maximum of two rotations for insertion and three rotations for deletion. Like Red-Black trees, AVL trees searching, inserting, and deleting operations have a time complexity of O(log n). Although, due to its strict balancing requirements, AVL trees may take longer to complete insertions and deletions than Red-Black trees.  
-## Documentation - Algorithm Explanations
+## Documentation - Implementation Explanations
 #### Data Structure:  
 Nodes are created using a struct, with a pointer to left, right, and pointer. And enum is used to define and assign color (red or black).  
 ### Basic Operations  
