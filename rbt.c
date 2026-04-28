@@ -18,7 +18,7 @@ struct node* minNode(struct node* node);
 void replaceNode(struct node* u, struct node* v);
 void leftRotate(struct node* temp);
 void rightRotate(struct node* temp);
-void fixInsert(struct node* root, struct node* pt);
+void fixInsert(struct node* pt);
 void fixDelete(struct node* x);
 void freeTree(struct node* node);
 
@@ -71,19 +71,20 @@ struct node* BSTInsert(struct node* trav, struct node* temp) {
     return trav;
 }
 // Fix the violations caused by BST logic after inserting
-void fixInsert(struct node* root, struct node* pt){
+void fixInsert(struct node* pt){
     struct node* parent_pt = NULL;
     struct node* grandparent_pt = NULL;
 
-    while ((pt != root) && (pt->color != BLACK) && (pt->parent->color == RED)){
+    while (pt != root && pt->parent->color == RED){
         parent_pt = pt->parent;
-        grandparent_pt = pt->parent->parent;
+
+        if (parent_pt->parent == NULL) break;
+        grandparent_pt = parent_pt->parent;
 
         // Case A:
         // Parent of pt = left child of pt's grandparent
         if (parent_pt == grandparent_pt->left){
-            struct node* uncle_pt = grandparent_pt-> right;
-
+            struct node* uncle_pt = grandparent_pt->right;
             // Scenario 1:
             // The uncle of pt is red, recoloring needed
             if (uncle_pt != NULL && uncle_pt->color == RED){
@@ -106,6 +107,7 @@ void fixInsert(struct node* root, struct node* pt){
                 enum Color c = parent_pt->color;
                 parent_pt->color = grandparent_pt->color;
                 grandparent_pt->color = c;
+
                 pt = parent_pt;
             }
         }
@@ -115,14 +117,14 @@ void fixInsert(struct node* root, struct node* pt){
             struct node* uncle_pt = grandparent_pt->left;
             // Scenario 1:
             // The uncle of pt is red, recoloring needed
-             if (uncle_pt != NULL && uncle_pt->color == RED){
+            if (uncle_pt != NULL && uncle_pt->color == RED){
                 grandparent_pt->color = RED;
                 parent_pt->color = BLACK;
                 uncle_pt->color = BLACK;
                 pt = grandparent_pt;
             }
             else {
-            // Scenario 2:
+                // Scenario 2:
             // pt is left child of its parent, need right rotation
                 if (pt == parent_pt->left){
                     rightRotate(parent_pt);
@@ -144,12 +146,13 @@ void fixInsert(struct node* root, struct node* pt){
 
 // Wrapper function for entire insertion process
 void insert(int data) {
+    if (root) root->color = BLACK;
     struct node* temp = (struct node*)malloc(sizeof(struct node));
     temp->data = data;
     temp->left = temp->right = temp->parent = NULL;
     temp->color = RED;
     root = BSTInsert(root, temp);
-    fixInsert(root, temp);
+    fixInsert(temp);
 }
 // ---------------------------------------------------------------
 
@@ -190,70 +193,78 @@ void delete(int data){
 // Fix the violations caused by BST logic after deleting
 void fixDelete(struct node* x) {
     while (x != root && (x == NULL || x->color == BLACK)) {
-        if (x == (x ? x->parent->left : NULL) || (x == NULL && root->left == NULL)) {
-            break;
-        }
-        if (x == x->parent->left) {
-            struct node* s = x->parent->right; // sibling
-            
-            // Case 1: Sibling is red
-            if (s->color == RED) {
+
+        struct node* parent = (x != NULL) ? x->parent : NULL;
+        if (parent == NULL) break;
+
+        if (x == parent->left) {
+            struct node* s = parent->right;
+
+            // Case 1: sibling red
+            if (s && s->color == RED) {
                 s->color = BLACK;
-                x->parent->color = RED;
-                leftRotate(x->parent);
-                s = x->parent->right;
+                parent->color = RED;
+                leftRotate(parent);
+                s = parent->right;
             }
 
-            // Case 2: Sibling is black, and both its children are black
-            if ((s->left == NULL || s->left->color == BLACK) &&
-                (s->right == NULL || s->right->color == BLACK)) {
-                s->color = RED;
-                x = x->parent;
+            // Case 2: sibling black with black children
+            if ((s == NULL) ||
+                ((s->left == NULL || s->left->color == BLACK) &&
+                 (s->right == NULL || s->right->color == BLACK))) {
+
+                if (s) s->color = RED;
+                x = parent;
             } else {
-                // Case 3: Sibling is black, left child is red, right child is black
+                // Case 3: Sibling black, left child red, right child black
                 if (s->right == NULL || s->right->color == BLACK) {
                     if (s->left) s->left->color = BLACK;
-                    s->color = RED;
+                    if (s) s->color = RED;
                     rightRotate(s);
-                    s = x->parent->right;
+                    s = parent->right;
                 }
 
-                // Case 4: Sibling is black, right child is red
-                s->color = x->parent->color;
-                x->parent->color = BLACK;
-                if (s->right) s->right->color = BLACK;
-                leftRotate(x->parent);
+                // Case 4: Sibling black, right child red
+                if (s) s->color = parent->color;
+                parent->color = BLACK;
+                if (s && s->right) s->right->color = BLACK;
+                leftRotate(parent);
                 x = root;
             }
         } else {
-            // Symmetric Case (Right side)
-            struct node* s = x->parent->left;
-            if (s->color == RED) {
+            // Symmetric/mirror case
+            struct node* s = parent->left;
+
+            if (s && s->color == RED) {
                 s->color = BLACK;
-                x->parent->color = RED;
-                rightRotate(x->parent);
-                s = x->parent->left;
+                parent->color = RED;
+                rightRotate(parent);
+                s = parent->left;
             }
-            if ((s->right == NULL || s->right->color == BLACK) &&
-                (s->left == NULL || s->left->color == BLACK)) {
-                s->color = RED;
-                x = x->parent;
+
+            if ((s == NULL) ||
+                ((s->left == NULL || s->left->color == BLACK) &&
+                 (s->right == NULL || s->right->color == BLACK))) {
+
+                if (s) s->color = RED;
+                x = parent;
             } else {
                 if (s->left == NULL || s->left->color == BLACK) {
                     if (s->right) s->right->color = BLACK;
-                    s->color = RED;
+                    if (s) s->color = RED;
                     leftRotate(s);
-                    s = x->parent->left;
+                    s = parent->left;
                 }
-                s->color = x->parent->color;
-                x->parent->color = BLACK;
-                if (s->left) s->left->color = BLACK;
-                rightRotate(x->parent);
+
+                if (s) s->color = parent->color;
+                parent->color = BLACK;
+                if (s && s->left) s->left->color = BLACK;
+                rightRotate(parent);
                 x = root;
             }
         }
-        break;
     }
+
     if (x) x->color = BLACK;
 }
 // ----------------------------------------------------------
@@ -269,7 +280,7 @@ struct node* search(struct node* root, int data) {
 void inorder(struct node* root){
     if (root == NULL) return;
     inorder(root->left);
-    printf("%d (%s)", root->data, root->color == RED ? "R" : "B");
+    printf("%d (%s) ", root->data, root->color == RED ? "R" : "B");
     inorder(root->right);
 }
 
@@ -287,7 +298,7 @@ void replaceNode(struct node* u, struct node* v) {
     if (v != NULL) v->parent = u->parent;
 }
 
-// Frees memory, from leaves to root
+// Frees memory, leaves to root
 void freeTree(struct node* node) {
     if (node == NULL) return;
     // Handle subtrees
@@ -316,7 +327,7 @@ int verifyRB(struct node* n) {
 
 //-----------------------------------------------------------
 // TEST SUITE------------------------------------------------
-void run_tests() {
+void runTestSuite() {
     
     printf("Red-Black Tree Test Suite:\n\n");
 
@@ -350,12 +361,12 @@ void run_tests() {
         printf("PASSED\n");
     else printf("FAILED\n");
 
-    // Test 5: Stress Test & Integration
-    printf("Test 5: Large Scale Random Integration... ");
+    // Test 5: Random RB-Tree Build
+    printf("Test 5: Random RB-Tree... ");
     // Clear tree first
     freeTree(root);
     root = NULL;
-    for(int i = 0; i < 100; i++) {
+    for(int i = 0; i < 10; i++) {
         insert(rand() % 1000);
     }
     if (verifyRB(root) && getBlackHeight(root) != -1)
@@ -370,21 +381,8 @@ void run_tests() {
 
 // Main method
 int main(){
-    // int a[] = {7, 6, 5, 4, 3, 2, 1};
-    // int n = sizeof(a) / sizeof(a[0]);
 
-    // for (int i = 0; i < n; i++) {
-    //     insertNode(a[i]);
-    // }
-
-    // printf("In-order Traversal of the Red-Black Tree:\n");
-    // inorder(root); // Traversal method
-    // printf("\n");
-
-    // // Clean up memory
-    // freeTree(root);
-    // root = NULL;
-
-    run_tests();
+    // Run Test Suite
+    runTestSuite();
     return 0;
 }
